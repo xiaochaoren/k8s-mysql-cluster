@@ -11,6 +11,7 @@ mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "create user
 mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "create user backup@'127.0.0.1' identified by $(MYSQL_BACKUP_PASSWORD)"
 mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "create user bootstrap@'%' identified by $(MYSQL_BOOTSTRAP_PASSWORD)"
 mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "create user replicator@'%' identified by $(MYSQL_REPLICATOR_PASSWORD)"
+mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "create user readiness@'127.0.0.1' identified by readiness"
 
 # grant group replication privileges for amdin
 mysql -uroot -p$(MYSQL_ROOT_PASSWORD) -h $(MYSQL_SERVER_ADDRESS) -e "GRANT SELECT, RELOAD, SHUTDOWN, PROCESS, FILE, SUPER, EXECUTE, REPLICATION SLAVE, REPLICATION CLIENT, CREATE USER ON *.* TO `admin`@`%` WITH GRANT OPTION"

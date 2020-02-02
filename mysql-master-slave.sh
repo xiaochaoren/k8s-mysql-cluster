@@ -1,5 +1,8 @@
 # deploy master-slave cluster
 
+# store account in secret
+kubectl apply -f ./mysql-accounts/secret.yml
+
 #deploy storage
 kubectl apply -f ./mysql-master-slave/storage.yml
 
