@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+  namespace: data
+  labels:
+    app: mysql
+data:
+  my.cnf: |
+    # mysql configuration file
+    [mysqld]
+    binlog_checksum=NONE
+    enforce_gtid_consistency=ON
+    gtid_mode=ON
+
+    !includedir /etc/mysql/conf.d/
+    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: data
+  name: mysql-service
+spec:
+  ports:
+  - name: mysql-service
+    port: 3306
+  clusterIP: None
+  selector:
+    app: mysql

@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-master
+  namespace: data
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      nodeSelector:
+        mysql: master
+      initContainers:
+      - name: init-mysql
+        image: mysql:8.0.18
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          # Generate mysql server-id from pod ordinal index.
+          [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+          mkdir -p /mnt/mysql/conf.d
+          echo [mysqld] > /mnt/mysql/conf.d/server-id.cnf
+          # Add an offset to avoid reserved server-id=0 value.
+          echo server-id=$((100 + ${BASH_REMATCH[1]})) >> /mnt/mysql/conf.d/server-id.cnf
+          # Copy appropriate conf.d files from config-map to emptyDir.
+          cp /mnt/config-map/master.cnf /mnt/mysql/conf.d/
+          cp /mnt/config-map/my.cnf /mnt/mysql
+        volumeMounts:
+        - name: conf
+          mountPath: /mnt/mysql
+        - name: config-map
+          mountPath: /mnt/config-map
+      containers:
+        - name: mysql
+          image: mysql:8.0.18
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+          - name: data
+            mountPath: /var/lib/mysql
+          - name: conf
+            mountPath: /etc/mysql
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              # Check we can execute queries over TCP (skip-networking is off).
+              command: ["mysql", "-h", "127.0.0.1", "-ureadiness", "-preadiness", "-e", "SELECT 1"]
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            timeoutSeconds: 1
+        - name: xtrabackup
+          image: percona-xtrabackup:8.0
+          ports:
+            - containerPort: 3307
+          env: 
+            - name: BACKUP_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-account-password
+                  key: backuper-account
+            - name: BACKUP_ACCOUNT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-account-password
+                  key: backuper-password
+          command:
+          - bash
+          - "-c"
+          - |
+            set -ex
+            cd /var/lib/mysql
+
+            ls -l /var/lib/mysql
+
+            [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+            exec ncat --listen --keep-open --send-only --max-conns=1 3307 -c \
+            "xtrabackup --backup --slave-info --stream=xbstream --host=127.0.0.1 --user=$(BACKUP_ACCOUNT) --password=$(BACKUP_ACCOUNT_PASSWORD)"
+          volumeMounts:
+          - name: data
+            mountPath: /var/lib/mysql
+          - name: conf
+            mountPath: /etc/mysql
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: mysql
+      imagePullSecrets:
+        - name: image-repo-secret
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: mysql-local-storage
+      resources:
+        requests:
+          storage: 25Gi
