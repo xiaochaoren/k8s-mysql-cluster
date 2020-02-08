@@ -1,4 +1,7 @@
 # k8s-mysql-cluster
+
+[![Join the chat at https://gitter.im/k8s-mysql-cluster/community](https://badges.gitter.im/k8s-mysql-cluster/community.svg)](https://gitter.im/k8s-mysql-cluster/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 各大云厂商都推出了RDS服务器，主要特点提供Mysql集群，保证高可用性，额外提供备份功能，但对于初创公司来说，价格有些贵。而单机mysql虽然不能保证高可用，但是其本身也提供了准备复制(Master Slave Replication)、主复制(Group Replication)，甚至提供了Mysql Innodb Cluster，一个利用mysql-shell, mysql group replication和mysql-router搭建集群的方案，这些功能社区版都是提供的，因此，自建mysql集群是初创公司高性价比的方案之一。
 
 ## 关于本项目
