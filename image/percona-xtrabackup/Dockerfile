@@ -19,5 +19,6 @@ RUN percona-release enable-only tools release
 RUN apt-get update
 RUN apt-get install -y mysql-client
 RUN apt-get install -y percona-xtrabackup-80
+RUN apt-get install -y mysql-shell
 
 CMD ["/bin/bash"]
